@@ -12,8 +12,8 @@
 
 @interface PGTableView ()
 
-@property (nonatomic, retain) NSMutableArray* rowRecords;
-@property (nonatomic, retain) NSMutableSet* reusePool;
+@property (nonatomic, retain) NSMutableArray* rowRecords;///<保存所有行的高度和偏移信息
+@property (nonatomic, retain) NSMutableSet* reusePool;///<重用池子
 @property (nonatomic, retain) NSMutableIndexSet* visibleRows;
 
 @end
@@ -134,7 +134,6 @@
     [self layoutTableRows];
 }
 
-
 - (NSIndexSet*) indexSetOfVisibleRows
 {
     return [[[self visibleRows] copy] autorelease];
@@ -152,6 +151,7 @@
 
 #pragma mark - layout the table rows
 
+///获取所有可见的行 获取cell
 - (void) layoutTableRows
 {
     CGFloat currentStartY = [self contentOffset].y;
@@ -170,6 +170,7 @@
         yOrigin = [self startPositionYForRow: rowToDisplay];
         rowHeight = [self heightForRow: rowToDisplay];
         
+        //获取该row对应的cell
         PGTableViewCell* cell = [self cachedCellForRow: rowToDisplay];
         
         if (!cell)
@@ -194,7 +195,7 @@
 }
 
 
-
+///设置新的可见行 将旧的移除并将旧的cell放入reusePool
 - (void) returnNonVisibleRowsToThePool: (NSMutableIndexSet*) currentVisibleRows
 {
     [[self visibleRows] removeIndexes: currentVisibleRows];
@@ -211,17 +212,20 @@
     [self setVisibleRows: currentVisibleRows];
 }
 
-
+///计算并保存每行的高度和offset
 - (void) generateHeightAndOffsetData
 {
     CGFloat currentOffsetY = 0.0;
     
     BOOL checkHeightForEachRow = [[self delegate] respondsToSelector: @selector(pgTableView:heightForRow:)];
     
+    //询问行高
     NSMutableArray* newRowRecords = [NSMutableArray array];
     
+    //行数
     NSInteger numberOfRows = [[self dataSource] numberOfRowsInPgTableView: self];
 
+    //保存所有行的信息
     for (NSInteger row = 0; row < numberOfRows; row++)
     {
         PGRowRecord* rowRecord = [[PGRowRecord alloc] init];
@@ -242,7 +246,7 @@
     [self setContentSize: CGSizeMake([self bounds].size.width,  currentOffsetY)];
 }
 
-
+///返回Y坐标对应的PGRowRecord的index
 - (NSInteger) findRowForOffsetY: (CGFloat) yPosition inRange: (NSRange) range
 {
     if ([[self rowRecords] count] == 0) return 0;
@@ -276,6 +280,7 @@
     return [(PGRowRecord*)[[self rowRecords] objectAtIndex: row] height];
 }
 
+
 - (PGTableViewCell*) cachedCellForRow: (NSInteger) row
 {
     return [(PGRowRecord*)[[self rowRecords] objectAtIndex: row] cachedCell];
@@ -294,7 +299,8 @@
     [self setRowHeight: 40.0];  // default value for row height
     [self setRowMargin: 2.0];
 }
- 
+
+///NSMutableSet
 - (NSMutableSet*) reusePool
 {
     if (!_pgReusePool)
@@ -305,6 +311,7 @@
     return _pgReusePool;
 }
 
+///NSMutableIndexSet
 - (NSMutableIndexSet*) visibleRows
 {
     if (!_pgVisibleRows)
